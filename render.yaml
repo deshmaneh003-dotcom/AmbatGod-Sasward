@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ambatgodcafesaswad42-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: https://ambatgodcafesaswad42.netlify.app
