@@ -22,6 +22,19 @@ body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--cream);
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 a { text-decoration: none; }
+.welcome-page { position: relative; min-height: 100vh; display: grid; place-items: center; overflow: hidden; padding: 24px; color: #fff; background: linear-gradient(135deg, rgba(18,43,29,.88), rgba(53,78,51,.72)), url("/cafe-login-background.png") center/cover; }
+.welcome-page:before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, rgba(232,194,139,.12), transparent 38%); }
+.welcome-page-glow { position: absolute; width: 280px; height: 280px; border-radius: 50%; filter: blur(20px); opacity: .16; }
+.welcome-page-glow-one { top: -120px; right: -80px; background: #e5bd7a; }
+.welcome-page-glow-two { bottom: -160px; left: -90px; background: #a4ba7e; }
+.welcome-card { position: relative; z-index: 1; width: min(680px, 100%); display: flex; flex-direction: column; align-items: center; padding: 38px 28px 42px; text-align: center; border: 1px solid rgba(255,255,255,.18); border-radius: 24px; background: rgba(29,54,38,.62); box-shadow: 0 24px 70px rgba(10,28,18,.32); backdrop-filter: blur(10px); }
+.welcome-logo { width: 138px; height: 138px; object-fit: contain; margin-bottom: 16px; border: 2px solid rgba(255,243,220,.7); border-radius: 50%; background: rgba(255,255,255,.94); box-shadow: 0 12px 28px rgba(0,0,0,.24); }
+.welcome-eyebrow { margin: 0 0 10px; color: #edcf9f; font-size: 12px; font-weight: 700; letter-spacing: 3px; }
+.welcome-card h1 { margin: 0; color: #fffaf1; font: 700 clamp(38px,7vw,68px)/1.04 Georgia, serif; letter-spacing: 1px; }
+.welcome-card h1 span { color: #f1bd75; }
+.welcome-message { max-width: 490px; margin: 18px 0 26px; color: #dce4d5; font-size: 15px; line-height: 1.6; }
+.welcome-enter { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #f1ca91; border-radius: 9px; padding: 0 21px; color: #263e2d; background: #f1ca91; font-size: 14px; font-weight: 800; box-shadow: 0 8px 22px rgba(17,31,22,.22); transition: transform .2s, background .2s; }
+.welcome-enter:hover { transform: translateY(-2px); background: #f7d7a8; }
 .app-frame { height: 100vh; min-height: 0; display: flex; align-items: stretch; overflow: hidden; }
 .sidebar { width: 254px; flex: 0 0 254px; height: 100vh; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; background: #1b3023; color: #ded3ca; display: flex; flex-direction: column; position: relative; z-index: 20; padding: 27px 17px 15px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: inherit; font-weight: 700; font-size: 18px; letter-spacing: -.3px; white-space: nowrap; }

@@ -26,20 +26,15 @@ const cafeDateKey = (date) => {
   const values = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map(({ type, value }) => [type, value]));
   return `${values.year}-${values.month}-${values.day}`;
 };
-const initialSession = (() => {
-  const token = sessionStorage.getItem('abg_token');
-  try {
-    return { token, user: token ? JSON.parse(sessionStorage.getItem('abg_user') || 'null') : null };
-  } catch {
-    sessionStorage.removeItem('abg_token');
-    sessionStorage.removeItem('abg_user');
-    return { token: null, user: null };
-  }
-})();
+const initialSession = {
+  token: null,
+  user: { name: 'Cafe Admin', designation: 'Administrator' }
+};
 function App() {
   const [session, setSession] = useState(initialSession);
   useEffect(() => {
     ['abg_token', 'abg_user'].forEach((key) => localStorage.removeItem(key));
+    ['abg_token', 'abg_user'].forEach((key) => sessionStorage.removeItem(key));
   }, []);
   const updateUser = (user) => {
     setSession((current) => ({ ...current, user }));
@@ -57,10 +52,11 @@ function App() {
     setSession({ token: null, user: null });
   };
   return <BrowserRouter><Routes>
-    <Route path="/login" element={session.token ? <Navigate to="/" replace /> : <AuthPage onSignIn={signIn} />} />
-    <Route path="/register" element={session.token ? <Navigate to="/" replace /> : <AuthPage onSignIn={signIn} register />} />
-    <Route path="/" element={session.token ? <AppShell session={session} onSignOut={signOut} onUserUpdate={updateUser} /> : <Navigate to="/login" replace />}>
-      <Route index element={<Dashboard token={session.token} />} />
+    <Route path="/" element={<WelcomePage />} />
+    <Route path="/login" element={<Navigate to="/" replace />} />
+    <Route path="/register" element={<Navigate to="/" replace />} />
+    <Route element={<AppShell session={session} onSignOut={signOut} onUserUpdate={updateUser} />}>
+      <Route path="overview" element={<Dashboard token={session.token} />} />
       <Route path="billing" element={<Billing token={session.token} />} />
       <Route path="menu" element={<MenuManagement token={session.token} />} />
       <Route path="orders" element={<Orders token={session.token} />} />
@@ -68,9 +64,26 @@ function App() {
       <Route path="reports" element={<Reports token={session.token} />} />
       <Route path="profile" element={<Profile user={session.user} token={session.token} onUserUpdate={updateUser} />} />
       <Route path="settings" element={<Settings token={session.token} />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/overview" replace />} />
     </Route>
   </Routes></BrowserRouter>;
+}
+
+function WelcomePage() {
+  const navigate = useNavigate();
+  return <main className="welcome-page">
+    <div className="welcome-page-glow welcome-page-glow-one" />
+    <div className="welcome-page-glow welcome-page-glow-two" />
+    <section className="welcome-card">
+      <img className="welcome-logo" src="/aam-bat-god-logo.png" alt="Ambatgod Cafe logo" />
+      <p className="welcome-eyebrow">CAFE MANAGEMENT SYSTEM</p>
+      <h1>WELCOME TO<br /><span>AMBATGOD CAFE</span></h1>
+      <p className="welcome-message">Fresh orders, happy customers and a perfectly managed cafe.</p>
+      <button className="welcome-enter" type="button" onClick={() => navigate('/overview')}>
+        Get Started <ArrowRight size={18} />
+      </button>
+    </section>
+  </main>;
 }
 
 function AuthPage({ register = false, onSignIn }) {
@@ -136,7 +149,7 @@ function Field({ label, name, type = 'text', value, onChange, placeholder, requi
 }
 
 const navigation = [
-  { section: 'WORKSPACE', links: [['/', 'Overview', LayoutDashboard], ['/billing', 'New Order', ShoppingCart], ['/menu', 'Menu', UtensilsCrossed], ['/orders', 'Orders', ShoppingBag]] },
+  { section: 'WORKSPACE', links: [['/overview', 'Overview', LayoutDashboard], ['/billing', 'New Order', ShoppingCart], ['/menu', 'Menu', UtensilsCrossed], ['/orders', 'Orders', ShoppingBag]] },
   { section: 'INSIGHTS', links: [['/reports', 'Sales report', BarChart3]] },
   { section: 'PREFERENCES', links: [['/profile', 'My Profile', UserRound], ['/settings', 'Setting page', SettingsIcon]] }
 ];
@@ -224,9 +237,9 @@ function AppShell({ session, onSignOut, onUserUpdate }) {
         <span className="location-icon"><House size={16} /></span><span><strong>{workspace.workspaceLocation}</strong><small>{workspace.workspaceName}</small></span><Pencil size={14} />
       </button>}
       <nav className="side-nav">
-        {navigation.map((group) => <div className="nav-group" key={group.section}><div className="sidebar-label">{group.section}</div>{group.links.map(([to, label, Icon]) => <NavLink key={to} to={to} end={to === '/'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{label === 'New order' && <span className="nav-shortcut">⌘ N</span>}</NavLink>)}</div>)}
+        {navigation.map((group) => <div className="nav-group" key={group.section}><div className="sidebar-label">{group.section}</div>{group.links.map(([to, label, Icon]) => <NavLink key={to} to={to} end={to === '/overview'} onClick={() => setMobileOpen(false)} className={({ isActive }) => `nav-link ${isActive ? 'nav-active' : ''}`}><Icon size={18} strokeWidth={1.8} /><span>{label}</span>{label === 'New order' && <span className="nav-shortcut">⌘ N</span>}</NavLink>)}</div>)}
       </nav>
-      <div className="sidebar-bottom"><button className="nav-link logout-link" onClick={onSignOut}><LogOut size={18} /><span>Sign out</span></button><div className="sidebar-profile"><span className="avatar">{initials(session.user?.name)}</span><div><strong>{session.user?.name || 'Cafe Admin'}</strong>
+      <div className="sidebar-bottom"><div className="sidebar-profile"><span className="avatar">{initials(session.user?.name)}</span><div><strong>{session.user?.name || 'Cafe Admin'}</strong>
         {designationEditing ? <form className="designation-editor" onSubmit={saveDesignation}><div className="designation-editor-row"><input aria-label="Administrator label" maxLength={40} value={designationDraft} onChange={(event) => setDesignationDraft(event.target.value)} autoFocus /><button type="submit" aria-label="Save designation" disabled={designationBusy}><Check size={13} /></button><button type="button" aria-label="Cancel designation edit" onClick={() => { setDesignationDraft(session.user?.designation || 'Administrator'); setDesignationEditing(false); setDesignationError(''); }}><X size={13} /></button></div>{designationError && <small className="sidebar-inline-error" role="alert">{designationError}</small>}</form> : <button className="sidebar-role-trigger" type="button" onClick={() => { setDesignationDraft(session.user?.designation || 'Administrator'); setDesignationEditing(true); setDesignationError(''); }}><small>{session.user?.designation || 'Administrator'}</small><Pencil size={11} /></button>}
       </div></div></div>
     </aside>

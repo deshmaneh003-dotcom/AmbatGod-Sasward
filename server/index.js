@@ -63,14 +63,16 @@ const parseCafeDay = (value) => {
   return Number.isNaN(date.getTime()) ? null : cafeDayStart(date);
 };
 const requireAuth = (req, res, next) => {
+  req.user = null;
   const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
-  if (!token || !jwtSecret) return res.status(401).json({ message: 'Please sign in to continue.' });
-  try {
-    req.user = jwt.verify(token, jwtSecret);
-    return next();
-  } catch {
-    return res.status(401).json({ message: 'Your session has expired. Please sign in again.' });
+  if (token && jwtSecret) {
+    try {
+      req.user = jwt.verify(token, jwtSecret);
+    } catch {
+      req.user = null;
+    }
   }
+  return next();
 };
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' }));
@@ -131,7 +133,9 @@ app.get('/api/auth/login-history', requireAuth, asyncRoute(async (_req, res) => 
 }));
 
 app.get('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
-  const user = await User.findById(req.user.id).select('-password');
+  const user = req.user?.id
+    ? await User.findById(req.user.id).select('-password')
+    : await User.findOne().select('-password');
   if (!user) return res.status(404).json({ message: 'Account not found.' });
   return res.json(user);
 }));
@@ -143,12 +147,14 @@ app.put('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: 'Enter a valid email address.' });
   if (!/^[+()\d\s-]{7,20}$/.test(phone.trim())) return res.status(400).json({ message: 'Enter a valid phone number.' });
   if (!/^[a-zA-Z0-9._-]{3,30}$/.test(username.trim())) return res.status(400).json({ message: 'Username must be 3–30 characters and use letters, numbers, dots, underscores or hyphens.' });
+  const currentUser = req.user?.id ? await User.findById(req.user.id) : await User.findOne();
+  if (!currentUser) return res.status(404).json({ message: 'Account not found.' });
   const duplicate = await User.findOne({
-    _id: { $ne: req.user.id },
+    _id: { $ne: currentUser._id },
     $or: [{ email: email.trim().toLowerCase() }, { username: username.trim().toLowerCase() }]
   });
   if (duplicate) return res.status(409).json({ message: 'That email or username is already in use.' });
-  const user = await User.findByIdAndUpdate(req.user.id, {
+  const user = await User.findByIdAndUpdate(currentUser._id, {
     name: name.trim(), email: email.trim().toLowerCase(), phone: phone.trim(), phoneNormalized: phone.replace(/\D/g, ''),
     username: username.trim().toLowerCase()
   }, { new: true, runValidators: true }).select('-password');
@@ -158,7 +164,9 @@ app.put('/api/auth/me', requireAuth, asyncRoute(async (req, res) => {
 app.patch('/api/auth/me/designation', requireAuth, asyncRoute(async (req, res) => {
   const designation = typeof req.body.designation === 'string' ? req.body.designation.trim() : '';
   if (!designation || designation.length > 40) return res.status(400).json({ message: 'Enter a designation with 1 to 40 characters.' });
-  const user = await User.findByIdAndUpdate(req.user.id, { designation }, { new: true, runValidators: true }).select('-password');
+  const currentUser = req.user?.id ? await User.findById(req.user.id) : await User.findOne();
+  if (!currentUser) return res.status(404).json({ message: 'Account not found.' });
+  const user = await User.findByIdAndUpdate(currentUser._id, { designation }, { new: true, runValidators: true }).select('-password');
   if (!user) return res.status(404).json({ message: 'Account not found.' });
   return res.json(user);
 }));
